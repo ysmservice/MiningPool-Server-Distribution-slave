@@ -1,6 +1,6 @@
 const net = require('net');
 
-const mainServerHost = 'localhost';
+const mainServerHost = '113.150.233.75';
 const mainServerPort = 15299;
 const listenPorts = [15000, 15001, 15002]; // ここにリッスンしたいポートを追加
 const minerSockets = {};
@@ -14,6 +14,7 @@ listenPorts.forEach(port => {
 
     if (!mainServerSockets[minerIdentifier]) {
       const mainServerSocket = new net.Socket();
+      mainServerSockets[minerIdentifier] = mainServerSocket;
       mainServerSocket.connect(mainServerPort, mainServerHost, () => {
         console.log('Connected to main server from port', port);
         mainServerSockets[minerIdentifier] = mainServerSocket;
@@ -34,8 +35,9 @@ listenPorts.forEach(port => {
       mainServerSocket.on('data', (mainData) => {
         try {
           const message = JSON.parse(mainData.toString('utf-8'));
-          if (minerSockets[message.minerIdentifier]) {
-            minerSockets[message.minerIdentifier].write(message.data);
+          if (minerSockets[minerIdentifier]) {
+            minerSockets[minerIdentifier].write(message.data);
+            console.log(`Received data: ${mainData.toString('utf-8')}`);
           }
         } catch (err) {
           console.error(`Received data from main server is not valid JSON: ${mainData.toString('utf-8')}`);
@@ -44,7 +46,7 @@ listenPorts.forEach(port => {
     }
 
     socket.on('data', (data) => {
-      const message = JSON.stringify({ minerIdentifier, data: data.toString('utf-8'), port });
+      const message = JSON.stringify({ minerIdentifier, data: data.toString('utf-8'), port: port });
       if (mainServerSockets[minerIdentifier]) {
         mainServerSockets[minerIdentifier].write(message);
       }

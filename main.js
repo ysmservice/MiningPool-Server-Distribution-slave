@@ -32,15 +32,38 @@ listenPorts.forEach(port => {
         }
       });
 
+      let buffer = '';
+
       mainServerSocket.on('data', (mainData) => {
-        try {
-          const message = JSON.parse(mainData.toString('utf-8'));
-          if (minerSockets[minerIdentifier]) {
-            minerSockets[minerIdentifier].write(message.data);
-            console.log(`Received data: ${mainData.toString('utf-8')}`);
+        buffer += mainData.toString('utf-8');
+        
+        while (true) {
+          let braceCount = 0;
+          let endIndex = -1;
+          
+          for (let i = 0; i < buffer.length; i++) {
+            if (buffer[i] === '{') braceCount++;
+            if (buffer[i] === '}') braceCount--;
+            if (braceCount === 0 && buffer[i] === '}') {
+              endIndex = i + 1;
+              break;
+            }
           }
-        } catch (err) {
-          console.error(`Received data from main server is not valid JSON: ${mainData.toString('utf-8')}`);
+
+          if (endIndex === -1) break; // 完全なJSONメッセージがまだ来ていない
+
+          const completeMessage = buffer.slice(0, endIndex);
+          buffer = buffer.slice(endIndex);
+
+          try {
+            const message = JSON.parse(completeMessage);
+            if (minerSockets[minerIdentifier]) {
+              minerSockets[minerIdentifier].write(message.data);
+              console.log(`Received data: ${message.data}`);
+            }
+          } catch (err) {
+            console.error(`Received data from main server is not valid JSON: ${completeMessage}`);
+          }
         }
       });
     }

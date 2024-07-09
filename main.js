@@ -2,7 +2,7 @@ const net = require('net');
 
 const mainServerHost = '113.150.233.75';
 const mainServerPort = 15299;
-const listenPorts = [15000, 15001, 15002]; // ここにリッスンしたいポートを追加
+const listenPorts = [13102, 13101, 14090, 14092, 13103, 13104, 14075]; // ここにリッスンしたいポートを追加
 const minerSockets = {};
 const mainServerSockets = {};
 
